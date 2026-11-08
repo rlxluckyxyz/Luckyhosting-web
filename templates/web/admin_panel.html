@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>LUCKY-CORE | Admin Authority</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;700;800&display=swap');
+    
+    :root {
+      --bg: #000000;
+      --card: rgba(28, 28, 30, 0.7);
+      --accent: #ff3b30; 
+      --blue: #007aff;   
+      --green: #34c759;  
+      --orange: #ff9f0a;
+      --border: rgba(255, 255, 255, 0.1);
+      --glass: blur(25px) saturate(180%);
+    }
+
+    body {
+      background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0; padding-bottom: 50px;
+    }
+
+    .navbar {
+      background: rgba(0, 0, 0, 0.5); backdrop-filter: var(--glass);
+      border-bottom: 0.5px solid var(--border); padding: 15px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 1000;
+    }
+
+    .container { max-width: 800px; margin: auto; padding: 20px; }
+
+    /* --- Monitor Screen --- */
+    .monitor-grid { 
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 25px; 
+    }
+    .stat-pill {
+      background: var(--card); border: 0.5px solid var(--border);
+      padding: 15px; border-radius: 20px;
+    }
+    .stat-label { font-size: 10px; color: #8e8e93; font-weight: 700; text-transform: uppercase; }
+    .stat-value { font-size: 18px; font-weight: 800; display: block; margin-top: 4px; }
+    
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    .dot-online { background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
+    .dot-offline { background: var(--accent); }
+    .dot-suspended { background: var(--orange); }
+
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+    /* --- User Cards --- */
+    .user-card {
+      background: var(--card); border-radius: 22px; padding: 18px;
+      margin-bottom: 15px; border: 0.5px solid var(--border);
+    }
+    .u-top { display: flex; align-items: center; gap: 15px; }
+    .u-avatar {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, #1c1c1e, #2c2c2e);
+      display: flex; align-items: center; justify-content: center; font-weight: 800;
+    }
+
+    .badge-row { margin-top: 8px; display: flex; gap: 5px; }
+    .ios-badge {
+      font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
+    }
+    .badge-limit { background: rgba(0, 122, 255, 0.1); color: var(--blue); }
+    .badge-active { background: rgba(52, 199, 89, 0.1); color: var(--green); }
+    .badge-banned { background: rgba(255, 59, 48, 0.1); color: var(--accent); }
+
+    .actions {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      margin-top: 15px; border-top: 0.5px solid var(--border); padding-top: 15px;
+    }
+    .ios-btn {
+      background: rgba(255,255,255,0.05); border: none; border-radius: 12px;
+      padding: 10px 0; color: #fff; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .ios-btn span { font-size: 9px; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div style="font-weight:800; font-size:18px;">LUCKY Authority</div>
+  <button class="ios-btn" style="flex-direction:row; padding:8px 15px; background:var(--blue); border-radius:20px;" onclick="createUser()">
+    <i class="fa-solid fa-plus"></i> <span style="margin-left:5px;">New Identity</span>
+  </button>
+</nav>
+
+<div class="container">
+  <div class="monitor-grid">
+    <div class="stat-pill">
+      <span class="stat-label">Active Nodes</span>
+      <span class="stat-value"><span class="dot dot-online"></span> <span id="onlineCount">0</span> Online</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-label">Total Servers</span>
+      <span class="stat-value" id="totalSrvCount">0</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-label">Suspended</span>
+      <span class="stat-value"><span class="dot dot-suspended"></span> <span id="suspendedCount">0</span> Users</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-label">CPU Usage</span>
+      <span class="stat-value" id="cpuVal">0%</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin:0 0 15px;align-items:center;">
+    <input id="userSearch" type="search" placeholder="Search name, username or email..." oninput="filterUsers()"
+      style="flex:1;min-width:0;padding:13px 15px;border-radius:13px;border:1px solid var(--border);background:#171719;color:#fff;outline:none;">
+    <span id="userCount" style="font-size:11px;color:#8e8e93;white-space:nowrap;">0 users</span>
+  </div>
+  <div id="userList"></div>
+</div>
+
+<script>
+let cachedUsers = [];
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+async function loadData() {
+  try {
+    const r = await fetch('/admin/stats', {credentials:'same-origin'});
+    if (!r.ok) throw new Error('Admin session expired or stats unavailable');
+    const d = await r.json();
+    cachedUsers = Array.isArray(d.users) ? d.users : [];
+    document.getElementById('cpuVal').innerText = d.sys_cpu || '0%';
+    let totalSrv=0, onlineSrv=0, bannedUsers=0;
+    cachedUsers.forEach(u => { totalSrv+=Number(u.srv_count||0); onlineSrv+=Number(u.active_srvs||0); if(u.status==='banned') bannedUsers++; });
+    document.getElementById('onlineCount').innerText=onlineSrv;
+    document.getElementById('totalSrvCount').innerText=totalSrv;
+    document.getElementById('suspendedCount').innerText=bannedUsers;
+    filterUsers();
+  } catch(e) {
+    document.getElementById('userList').innerHTML='<div class="user-card">Unable to load users. Refresh and sign in to Admin Panel again.</div>';
+    console.error('Admin panel sync error:',e);
+  }
+}
+function filterUsers() {
+  const q=(document.getElementById('userSearch')?.value||'').trim().toLowerCase();
+  const users=cachedUsers.filter(u=>[u.fname,u.username,u.email].some(v=>String(v||'').toLowerCase().includes(q)));
+  document.getElementById('userCount').innerText=`${users.length} / ${cachedUsers.length} users`;
+  const list=document.getElementById('userList');
+  if(!users.length){list.innerHTML='<div class="user-card" style="padding:22px;text-align:center;color:#8e8e93;">No users found.</div>';return;}
+  list.innerHTML=users.map(u=>{
+    const limit=Number(u.server_limit??1), name=escapeHtml(u.fname||'User'), email=escapeHtml(u.email||'No email');
+    const username=escapeHtml(u.username||''), role=escapeHtml(u.role||'free'), status=escapeHtml(u.status||'active');
+    const expiry=escapeHtml(formatExpiry(u.expiry_at)), avatar=escapeHtml((u.fname||u.email||'U').charAt(0).toUpperCase());
+    const statusColor=u.status==='expired'?'var(--orange)':(u.status==='banned'?'var(--accent)':'var(--green)');
+    return `<div class="user-card animate__animated animate__fadeIn">
+      <div class="u-top">
+        <div class="u-avatar">${avatar}</div>
+        <div style="flex:1;min-width:0">
+          <h4 style="margin:0;overflow-wrap:anywhere;">${name}</h4>
+          <div style="font-size:11px;color:#8e8e93;overflow-wrap:anywhere;">${email}</div>
+          ${username?`<div style="font-size:10px;color:#777;margin-top:2px;">@${username}</div>`:''}
+          <div class="badge-row">
+            <span class="ios-badge badge-limit">Limit: ${limit}</span>
+            <span class="ios-badge">${role.toUpperCase()}</span>
+            <span class="ios-badge" style="color:${statusColor}">${status.toUpperCase()}</span>
+          </div>
+          <div style="font-size:10px;color:#9a9aa0;margin-top:7px;">Expiry: ${expiry}</div>
+        </div>
+        <div style="text-align:right;font-size:11px;font-weight:700;white-space:nowrap;">
+          <div style="color:var(--green)">${Number(u.active_srvs||0)} ON</div>
+          <div style="color:#8e8e93">${Number(u.srv_count||0)} TOTAL</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="ios-btn" onclick="editPermissions(${Number(u.id)},'${role}',${limit},'${status}','${escapeHtml(u.expiry_at||'')}')"><i class="fa-solid fa-sliders"></i><span>Plan / Limit / Expiry</span></button>
+        ${u.status==='banned'||u.status==='expired'?`<button class="ios-btn" style="color:var(--green)" onclick="toggleBan(${Number(u.id)},'active')"><i class="fa-solid fa-user-check"></i><span>${u.status==='expired'?'Reactivate':'Unban'}</span></button>`:`<button class="ios-btn" style="color:var(--accent)" onclick="toggleBan(${Number(u.id)},'banned')"><i class="fa-solid fa-user-slash"></i><span>Ban</span></button>`}
+        <button class="ios-btn" onclick="location.href='/admin/manage-user/${Number(u.id)}'"><i class="fa-solid fa-server"></i><span>Manage</span></button>
+        <button class="ios-btn" style="color:var(--accent)" onclick="deleteUser(${Number(u.id)})"><i class="fa-solid fa-trash"></i><span>Delete</span></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function postJson(url,payload){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||d.status!=='success')throw new Error(d.msg||'Request failed');
+  return d;
+}
+async function toggleBan(id,newStatus){
+  try{await postJson('/admin/user/update',{user_id:id,status:newStatus});await loadData();}
+  catch(e){Swal.fire({title:'Could not update user',text:e.message,icon:'error',background:'#1c1c1e',color:'#fff'});}
+}
+function expiryParts(value){
+  if(!value)return {date:'',time:'',ampm:'PM'};
+  const d=new Date(value);
+  if(!Number.isNaN(d.getTime())){
+    let hour=d.getHours();const minute=String(d.getMinutes()).padStart(2,'0');
+    const ampm=hour>=12?'PM':'AM';hour=hour%12||12;
+    return {date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),time:String(hour).padStart(2,'0')+':'+minute,ampm};
+  }
+  const parts=String(value).split('T'),hm=(parts[1]||'00:00').slice(0,5).split(':');
+  let hour=Number(hm[0]||0),minute=hm[1]||'00';const ampm=hour>=12?'PM':'AM';hour=hour%12||12;
+  return {date:parts[0]||'',time:String(hour).padStart(2,'0')+':'+minute,ampm};
+}
+function formatExpiry(value){if(!value)return 'Never';const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleString();}
+function buildExpiry(prefix){
+  const date=document.getElementById(prefix+'-expiry-date').value;
+  const time=document.getElementById(prefix+'-expiry-time').value.trim();
+  const ampm=document.getElementById(prefix+'-expiry-ampm').value;
+  if(!date&&!time)return '';
+  if(!date||!time){Swal.showValidationMessage('Select both expiry date and time, or leave both blank.');return null;}
+  const match=time.match(/^(0?[1-9]|1[0-2]):([0-5][0-9])$/);
+  if(!match){Swal.showValidationMessage('Enter time in 12-hour format, for example 09:30.');return null;}
+  let hour=Number(match[1])%12;
+  if(ampm==='PM')hour+=12;
+  return new Date(date+'T'+String(hour).padStart(2,'0')+':'+match[2]).toISOString();
+}
+async function editPermissions(id,role,limit,status,expiry){
+  const {value:form}=await Swal.fire({title:'Manage User Access',background:'#1c1c1e',color:'#fff',
+    html:`<label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Plan</label>
+      <select id="sw-role" class="swal2-input" onchange="if(this.value==='free')document.getElementById('sw-limit').value=1" style="background:#2c2c2e;color:white;border-radius:10px;"><option value="free" ${role==='free'?'selected':''}>Free</option><option value="premium" ${role==='premium'?'selected':''}>Premium</option></select>
+      <label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Server limit</label>
+      <input id="sw-limit" type="number" min="1" max="10000" class="swal2-input" value="${limit}" style="background:#2c2c2e;color:white;border-radius:10px;">
+      <label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Expiry date</label>
+      <input id="sw-expiry-date" type="date" class="swal2-input" value="${expiryParts(expiry).date}" style="background:#2c2c2e;color:white;border-radius:10px;">
+      <label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Expiry time (12-hour)</label>
+      <div style="display:flex;gap:8px;margin:0 12px;"><input id="sw-expiry-time" type="text" placeholder="hh:mm" value="${expiryParts(expiry).time}" style="flex:1;min-width:0;padding:12px;background:#2c2c2e;color:white;border:1px solid #555;border-radius:10px;"><select id="sw-expiry-ampm" style="padding:12px;background:#2c2c2e;color:white;border:1px solid #555;border-radius:10px;"><option ${expiryParts(expiry).ampm==='AM'?'selected':''}>AM</option><option ${expiryParts(expiry).ampm==='PM'?'selected':''}>PM</option></select></div>
+      <small style="display:block;text-align:left;margin:8px 12px;color:#888;">Leave date and time blank for no expiry.</small>`,
+    preConfirm:()=>{const n=Number(document.getElementById('sw-limit').value);if(!Number.isInteger(n)||n<1||n>10000){Swal.showValidationMessage('Server limit must be between 1 and 10000');return false;}
+      const expiryValue=buildExpiry('sw');if(expiryValue===null)return false;return {user_id:id,role:document.getElementById('sw-role').value,limit:n,expiry_at:expiryValue};}});
+  if(form){try{await postJson('/admin/user/update',form);await loadData();}catch(e){Swal.fire({title:'Update failed',text:e.message,icon:'error',background:'#1c1c1e',color:'#fff'});}}
+}
+async function createUser(){
+  const {value:v}=await Swal.fire({title:'Create User',background:'#1c1c1e',color:'#fff',
+    html:`<input id="n-name" class="swal2-input" placeholder="Full Name"><input id="n-email" type="email" class="swal2-input" placeholder="Email Address"><input id="n-pass" class="swal2-input" type="password" placeholder="Password">
+      <label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Plan</label>
+      <select id="n-role" class="swal2-input" onchange="document.getElementById('n-limit').value=this.value==='free'?1:5" style="background:#2c2c2e;color:white;border-radius:10px;"><option value="premium" selected>Premium</option><option value="free">Free</option></select>
+      <label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Server limit</label><input id="n-limit" type="number" min="1" max="10000" class="swal2-input" value="5">
+      <label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Expiry date (optional)</label><input id="n-expiry-date" type="date" class="swal2-input" style="background:#2c2c2e;color:white;border-radius:10px;">
+      <label style="display:block;text-align:left;margin:10px 12px 0;color:#aaa;font-size:12px;">Expiry time (12-hour)</label><div style="display:flex;gap:8px;margin:0 12px;"><input id="n-expiry-time" type="text" placeholder="hh:mm" style="flex:1;min-width:0;padding:12px;background:#2c2c2e;color:white;border:1px solid #555;border-radius:10px;"><select id="n-expiry-ampm" style="padding:12px;background:#2c2c2e;color:white;border:1px solid #555;border-radius:10px;"><option>AM</option><option selected>PM</option></select></div>`,
+    preConfirm:()=>{const name=document.getElementById('n-name').value.trim(),email=document.getElementById('n-email').value.trim(),pass=document.getElementById('n-pass').value,limit=Number(document.getElementById('n-limit').value);
+      if(!name||!email||!pass){Swal.showValidationMessage('Name, email and password are required');return false;}
+      if(!Number.isInteger(limit)||limit<1||limit>10000){Swal.showValidationMessage('Server limit must be between 1 and 10000');return false;}
+      const expiryValue=buildExpiry('n');if(expiryValue===null)return false;return {name,email,pass,limit,role:document.getElementById('n-role').value,expiry_at:expiryValue};}});
+  if(v){try{await postJson('/admin/create-user',v);await loadData();Swal.fire({title:'User created',icon:'success',timer:1300,showConfirmButton:false,background:'#1c1c1e',color:'#fff'});}
+    catch(e){Swal.fire({title:'Create failed',text:e.message,icon:'error',background:'#1c1c1e',color:'#fff'});}}
+}
+async function deleteUser(id){
+  const res=await Swal.fire({title:'Delete this user?',text:'The user and their server records will be deleted.',icon:'warning',background:'#1c1c1e',color:'#fff',showCancelButton:true});
+  if(res.isConfirmed){try{await fetch(`/admin/delete-user/${id}`,{method:'POST',credentials:'same-origin'});await loadData();}
+    catch(e){Swal.fire({title:'Delete failed',text:e.message,icon:'error',background:'#1c1c1e',color:'#fff'});}}
+}
+loadData();setInterval(loadData,10000);
+</script>
+</body>
+</html>
