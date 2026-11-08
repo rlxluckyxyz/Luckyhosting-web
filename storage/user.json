@@ -1,0 +1,15 @@
+[
+  {
+    "user_id": 1,
+    "name": "ZIHADZ",
+    "username": "",
+    "gmail": "islamjihad384@gmail.com",
+    "password_hash": "scrypt:32768:8:1$xIaodgDtY8iEpVQ7$7449c7f25b8ba4d71d04b343518af74f1c624ffc919acae6871a76bd3fd7981cc4a07a977c32b816190ecd68bc899789a9beafae5de93b693bea0b8b39a88800",
+    "validity": "no_expiry",
+    "expiry_time": "",
+    "plan": "free",
+    "server_limit": 1,
+    "status": "active",
+    "created_at": "2026-11-07 09:39:53"
+  }
+]
